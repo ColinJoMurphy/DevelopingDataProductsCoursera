@@ -1,0 +1,34 @@
+---
+title: "Random Locations in Sacramento, CA"
+author: "Colin Murphy"
+date: "11/4/2021"
+output: html_document
+---
+
+```{r setup, echo=FALSE}
+library(leaflet)
+library(data.table)
+
+```
+
+Sacramento is the capital of California. Lets pin some random locations around it. 
+First, we store Sacramento's coordinates, then generate a data table with two columns, 
+each containing 100 random uniform numbers between -.05 and .05. Next, we simply add the Sacramento 
+latitude and longitude to each column respectively. Now we have a data table of 
+coordinates within .05 latitudinal and longitudinal points of Sacramento. 
+
+```{r}
+sacramento <- data.table('lat' = 38.581667,'long' = -121.494444)
+pts <- data.table('lat' = runif(100, min = -.05, max = .05),
+                  'long' = runif(100, min = -.05, max = .05))
+pts[, c('lat', 'long') := .(lat + sacramento$lat, long + sacramento$long)]
+```
+
+Finally, we can use leaflet to make a map!
+
+```{r}
+pts %>% leaflet() %>% 
+  addTiles() %>% 
+  addMarkers(clusterOptions = markerClusterOptions())
+```
+
