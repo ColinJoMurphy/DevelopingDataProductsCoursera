@@ -2,41 +2,38 @@
 title: "Week 3 Project"
 author: "Colin Murphy"
 date: "11/4/2021"
-output: html_document
+output: slidy_presentation
 ---
-First, load in the `plotly` and `data.table` libraries and load in the `mtcars` dataset.
-```{r }
+## Set Up
+- Load in the `plotly` and `data.table` libraries
+- Load in the `mtcars` dataset
+```{r}
 suppressPackageStartupMessages(library(plotly))
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(maps))
 dt <- data.table(mtcars, keep.rownames = T)
 ```
 
-Next, we use the plotly package to make some cool graphics!
+## Plotting with Plotly
 
-```{r, message=FALSE}
+Use the `plotly` package to make some cool graphics!
+
+```{r, message=FALSE, fig.dim=c(7,5)}
 plot_ly(data = dt, x = ~disp, y =  ~mpg, type = 'scatter', name = ~rn, color = ~qsec, showlegend = F)
-
+```
+##  More Dimensions!
+```{r, message=FALSE, fig.dim=c(8,6)}
 plot_ly(data = dt, x = ~disp, y = ~mpg, z = ~qsec, type = 'scatter3d', split = ~cyl, legendgrouptitle = list(text = 'Number of Cylinders'), hovertext = ~rn, hoverinfo = 'x+y+z+text')
 ```
-And just for fun, we'll add an map of the USA using `votes.repub` from the `maps` 
-package. 
+
+
+## Maps Too! 
 
 ```{r}
 
 avg.repub <- apply(votes.repub, MARGIN = 1, function(x) mean(x, na.rm = T)) %>%
   as.data.table(keep.rownames = T)
-
 avg.repub[, states := state.abb]
-
-  plot_ly(avg.repub, 
-          z = ~., 
-          type = 'choropleth', 
-          color = ~.,
-          locations = ~states, 
-          locationmode = 'USA-states', 
-          colors = 'Reds') %>%  
-    layout(title = 'Average Republican Vote Percentage by State (1856 - 1976)',
-           geo = list(scope = 'usa', 
-                      projection = list(type = 'albers usa')))
+  plot_ly(avg.repub,  z = ~., type = 'choropleth', color = ~., locations = ~states, locationmode = 'USA-states', colors = 'Reds') %>%  
+    layout(title = 'Average Republican Vote Percentage by State (1856 - 1976)', geo = list(scope = 'usa', projection = list(type = 'albers usa')))
 ```
