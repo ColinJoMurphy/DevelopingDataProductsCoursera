@@ -1,0 +1,61 @@
+---
+title: "Documentation for the Market Snapshot Web Application"
+author: "Colin Murphy"
+date: "11/8/2021"
+output: 
+  ioslides_presentation:
+    smaller: true
+          
+---
+```{r, echo=FALSE}
+suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(forecast))
+suppressPackageStartupMessages(library(ggplot2))
+sp <- fread('https://fred.stlouisfed.org/graph/fredgraph.csv?bgcolor=%23e1e9f0&chart_type=line&drp=0&fo=open%20sans&graph_bgcolor=%23ffffff&height=450&mode=fred&recession_bars=on&txtcolor=%23444444&ts=12&tts=12&width=1168&nt=0&thu=0&trc=0&show_legend=yes&show_axis_titles=yes&show_tooltip=yes&id=SP500&scale=left&cosd=2016-11-04&coed=2021-11-04&line_color=%234572a7&link_values=false&line_style=solid&mark_type=none&mw=3&lw=2&ost=-99999&oet=99999&mma=0&fml=a&fq=Daily%2C%20Close&fam=avg&fgst=lin&fgsnd=2020-02-01&line_index=1&transformation=lin&vintage_date=2021-11-05&revision_date=2021-11-05&nd=2011-11-07')
+```
+
+## Overview
+
+- The goal of the web application is to provide an overview of the US equity and bond market during a user defined time period.
+- There are thee main components to the application:
+  - The date range input located on the left side panel
+  - The *Compare Indicators* tab that contians a plot showing each market indicator's price over a given time frame
+  - The *Price Prediction* tab that allows the user to select an indicator for price prediction
+- Indicator price data from the FRED website.
+  - [S&P 500](https://fred.stlouisfed.org/series/SP500)
+  - [ICE BofA US Corporate Index Total Return Index Value ](https://fred.stlouisfed.org/series/BAMLCC0A0CMTRIV)
+  - [NASDAQ Composite Index](https://fred.stlouisfed.org/series/NASDAQCOM)
+    
+
+## Data Management
+
+Due to US Stock Exchange holidays, the FRED data has a few observations for which the price is recorded as `.`
+
+This is dealt with by imputing the missing price data with the previous day's price. The code for this is shown below using the S&P 500 data and the `data.table` package. Once the price variable is imputed, we can make it numeric.
+
+```{r}
+sp1 <- sp[, imputed_price := fifelse(SP500 == '.', shift(SP500), SP500)]
+sp[, imputed_price := as.numeric(imputed_price)]
+sp[DATE %like% '12-24' | DATE %like% '12-25']
+```
+
+---
+
+- The *Compare Indicators* tab also generates a table displaying the average price of each selected market indicator over the time period defined by the user. The general flow of the server code is as follows:  
+- Define a new, empty data table
+- Iterate through the three indicators
+  - If the indicator is selected, subset the indicator data according the date range chosen
+  - Append indicator subset the data table defined in the first step
+- With the data subsetted and combined appropriatly, use data table's `by` argument to calculate the mean of each indicator's price over the desired time period.
+  
+## Predictions
+
+Similarly, the *Price Prediction* tab subsets the of the selected indicator using the date range defined by the user. Then, the plot and time series prediction is generated using the `forecast` package. This process is shown below:
+```{r, fig.dim=c(7,3)}
+subset <- sp[DATE %between% c('2021-01-01', '2021-07-01')] 
+subset$imputed_price %>%
+  ts() %>%
+  auto.arima() %>%
+  forecast() %>%
+  autoplot() + xlab('S&P 500') + ylab('Price')
+```
